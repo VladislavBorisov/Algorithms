@@ -8,24 +8,20 @@ spring:
     config:
       server:
         composite:
-          - type: vault
-            uri: ${VAULT_URI:http://localhost:8200}
-            backend: secret
-            default-key: application
-            profile-separator: '/'
-            order: 1
           - type: s3
             uri: ${S3_URI}
             bucket: ${S3_BUCKET}
             order: 2
+        # Vault configuration - used by our custom VaultEnvironmentRepository
         vault:
           authentication: APPROLE
           app-role:
             role-id: ${VAULT_ROLE_ID}
             secret-id: ${VAULT_SECRET_ID}
           uri: ${VAULT_URI:http://localhost:8200}
-          # Add properties to handle batch token expiration
-          fail-fast: false
+          backend: secret
+          default-key: application
+          profile-separator: '/'
 
 # Management endpoints
 management:
