@@ -8,60 +8,35 @@ spring:
     config:
       server:
         composite:
-          # Vault backend - primary
           - type: vault
             uri: ${VAULT_URI:http://localhost:8200}
             backend: secret
             default-key: application
             profile-separator: '/'
             order: 1
-            fail-fast: false  # Don't fail if Vault has issues
-          # S3 backend - fallback
+            vault:
+              authentication: APPROLE
+              app-role:
+                role-id: ${VAULT_ROLE_ID}
+                secret-id: ${VAULT_SECRET_ID}
           - type: s3
             uri: ${S3_URI}
             bucket: ${S3_BUCKET}
             order: 2
-            fail-fast: false
-        vault:
-          authentication: APPROLE
-          app-role:
-            role-id: ${VAULT_ROLE_ID}
-            secret-id: ${VAULT_SECRET_ID}
-          uri: ${VAULT_URI:http://localhost:8200}
-          connection-timeout: 5000
-          read-timeout: 15000
-          # CRITICAL: Force re-auth every 15 minutes (before 20min batch token expires)
-          token-ttl: 900s              # 15 minutes
-          token-renewal-threshold: 0s  # Don't try to renew batch tokens
 
-# Vault configuration for token management
-vault:
-  authentication: APPROLE
-  app-role:
-    role-id: ${VAULT_ROLE_ID}
-    secret-id: ${VAULT_SECRET_ID}
-  uri: ${VAULT_URI:http://localhost:8200}
-  # Force re-authentication instead of renewal
-  lease:
-    min-renewal: 0s      # Disable renewal
-    expiry-threshold: 0s # Re-authenticate immediately when expired
-  connection-timeout: 5000
-  read-timeout: 15000
-
-# Logging to monitor re-authentication
-logging:
-  level:
-    org.springframework.vault.authentication: INFO
-    org.springframework.cloud.config: INFO
-  pattern:
-    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# Health endpoints
+# Enable refresh endpoint to handle token expiration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,refresh
   endpoint:
-    health:
-      show-details: always
+    refresh:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.config: INFO
+  pattern:
+    console: "%d{HH:mm:ss} - %msg%n"
