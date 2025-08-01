@@ -4,39 +4,33 @@ server:
 spring:
   application:
     name: config-server
+  # Disable default Vault integration - we handle it manually
   cloud:
     config:
       server:
-        composite:
-          - type: vault
-            uri: ${VAULT_URI:http://localhost:8200}
-            backend: secret
-            default-key: application
-            profile-separator: '/'
-            order: 1
-            vault:
-              authentication: APPROLE
-              app-role:
-                role-id: ${VAULT_ROLE_ID}
-                secret-id: ${VAULT_SECRET_ID}
-          - type: s3
-            uri: ${S3_URI}
-            bucket: ${S3_BUCKET}
-            order: 2
+        composite: []  # Empty - our custom repository will be used instead
 
-# Enable refresh endpoint to handle token expiration
+# Custom Vault configuration
+vault:
+  uri: ${VAULT_URI:http://localhost:8200}
+  role-id: ${VAULT_ROLE_ID}
+  secret-id: ${VAULT_SECRET_ID}
+
+# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,refresh
+        include: health,refresh,customVault
   endpoint:
-    refresh:
-      enabled: true
+    health:
+      show-details: always
+      show-components: always
 
 # Logging
 logging:
   level:
+    com.example.vault: DEBUG
     org.springframework.cloud.config: INFO
   pattern:
-    console: "%d{HH:mm:ss} - %msg%n"
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
