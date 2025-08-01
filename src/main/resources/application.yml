@@ -14,10 +14,14 @@ spring:
             default-key: application
             profile-separator: '/'
             order: 1
+            # Add fault tolerance for batch tokens
+            fail-fast: false
           - type: s3
             uri: ${S3_URI}
             bucket: ${S3_BUCKET}
             order: 2
+            # S3 as fallback when Vault fails
+            fail-fast: false
         vault:
           authentication: APPROLE
           app-role:
@@ -26,9 +30,9 @@ spring:
           uri: ${VAULT_URI:http://localhost:8200}
           connection-timeout: 5000
           read-timeout: 15000
-          # Token management settings
-          token-ttl: 3600s
-          token-renewal-threshold: 300s  # Renew 5 minutes before expiry
+          # Batch token settings - shorter timeouts
+          token-ttl: 1200s  # 20 minutes (batch token TTL)
+          token-renewal-threshold: 0s  # Don't try to renew batch tokens
 
 # Vault configuration for token management
 vault:
@@ -61,8 +65,9 @@ management:
 logging:
   level:
     com.example: DEBUG
-    org.springframework.vault: DEBUG
-    org.springframework.cloud.config: DEBUG
+    com.example.config.BatchTokenVaultManager: DEBUG
+    org.springframework.vault: INFO
+    org.springframework.cloud.config: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
