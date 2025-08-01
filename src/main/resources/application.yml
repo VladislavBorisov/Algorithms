@@ -4,28 +4,41 @@ server:
 spring:
   application:
     name: config-server
-  # Disable default Vault integration - we handle it manually
   cloud:
     config:
       server:
-        composite: []  # Empty - our custom repository will be used instead
+        composite:
+          - type: vault
+            uri: ${VAULT_URI:http://localhost:8200}
+            backend: secret
+            default-key: application
+            profile-separator: '/'
+            order: 1
+          - type: s3
+            uri: ${S3_URI}
+            bucket: ${S3_BUCKET}
+            order: 2
+        vault:
+          authentication: TOKEN  # Use token instead of APPROLE
+          token: ${spring.cloud.config.server.vault.token:}  # Will be set by our refresher
+          uri: ${VAULT_URI:http://localhost:8200}
 
-# Custom Vault configuration
+# Configuration for our token refresher
 vault:
   uri: ${VAULT_URI:http://localhost:8200}
-  role-id: ${VAULT_ROLE_ID}
-  secret-id: ${VAULT_SECRET_ID}
+  app-role:
+    role-id: ${VAULT_ROLE_ID}
+    secret-id: ${VAULT_SECRET_ID}
 
 # Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,refresh,customVault
+        include: health,refresh
   endpoint:
     health:
       show-details: always
-      show-components: always
 
 # Logging
 logging:
