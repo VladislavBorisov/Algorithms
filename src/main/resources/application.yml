@@ -1,0 +1,82 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        composite:
+          - type: vault
+            uri: ${VAULT_URI:http://localhost:8200}
+            backend: secret
+            default-key: application
+            profile-separator: '/'
+            order: 1
+          - type: s3
+            uri: ${S3_URI}
+            bucket: ${S3_BUCKET}
+            order: 2
+        vault:
+          authentication: APPROLE
+          app-role:
+            role-id: ${VAULT_ROLE_ID}
+            secret-id: ${VAULT_SECRET_ID}
+          uri: ${VAULT_URI:http://localhost:8200}
+          connection-timeout: 5000
+          read-timeout: 15000
+          # Token management settings
+          token-ttl: 3600s
+          token-renewal-threshold: 300s  # Renew 5 minutes before expiry
+
+# Vault configuration for token management
+vault:
+  authentication: APPROLE
+  app-role:
+    role-id: ${VAULT_ROLE_ID}
+    secret-id: ${VAULT_SECRET_ID}
+  uri: ${VAULT_URI:http://localhost:8200}
+  lease:
+    min-renewal: 300s
+    expiry-threshold: 600s
+  connection-timeout: 5000
+  read-timeout: 15000
+
+# Management endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,vault,env,configprops
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  health:
+    vault:
+      enabled: true
+
+# Logging configuration
+logging:
+  level:
+    com.example: DEBUG
+    org.springframework.vault: DEBUG
+    org.springframework.cloud.config: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/config-server.log
+
+# AWS S3 configuration (if using S3 backend)
+aws:
+  region: ${AWS_REGION:us-east-1}
+  s3:
+    bucket: ${S3_BUCKET:config-bucket}
+    
+# Security configuration (optional)
+security:
+  user:
+    name: ${CONFIG_SERVER_USERNAME:admin}
+    password: ${CONFIG_SERVER_PASSWORD:secret}
