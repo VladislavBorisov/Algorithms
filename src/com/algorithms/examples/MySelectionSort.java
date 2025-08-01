@@ -25,6 +25,6 @@ public class MySelectionSort {
 			System.out.print(i);
 			System.out.print(", ");
 		}
-		System.out.print("\n" + arr2[9] + " -- is the 10 biggest element");
+		System.out.print("\n" + arr2[9] + " -- is the 10th smallest element");
 	}
 }

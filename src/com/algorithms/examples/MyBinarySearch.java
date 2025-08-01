@@ -7,7 +7,7 @@ public class MyBinarySearch {
 		int start = 0;
 		int end = inputArr.length - 1;
 		while (start <= end) {
-			int mid = (start + end) / 2;
+			int mid = start + (end - start) / 2;
 			if (key == inputArr[mid]) {
 				return mid;
 			}
